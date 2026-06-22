@@ -44,17 +44,16 @@ app.get("/book-demo.html", (req, res) => {
 });
 
 app.get("/thank-you", (req, res) => {
-  res.sendFile(path.join(__dirname, "thank-you.html"));
+  res.redirect("/thank-you.html");
 });
 
 app.get("/thank-you.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "thank-you.html"));
+  res.sendFile(path.join(ROOT_DIR, "backend", "thank-you.html"));
 });
 
 app.post("/api/book-demo", async (req, res) => {
   try {
-    const { name, phone, email, business, businessType, service, message } =
-      req.body;
+    const { name, phone, email, business, businessType, service, message } = req.body;
 
     if (!name || !phone || !email || !business || !businessType || !service) {
       return res.status(400).json({
@@ -96,9 +95,7 @@ app.post("/api/book-demo", async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Thank you! Your demo request submitted successfully.",
-      whatsapp: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
-        whatsappText
-      )}`,
+      whatsapp: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(whatsappText)}`,
     });
   } catch (error) {
     console.error("❌ Server Error:", error.message);
