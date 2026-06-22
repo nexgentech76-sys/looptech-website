@@ -56,7 +56,8 @@ app.get("/thank-you.html", (req, res) => {
 
 app.post("/api/book-demo", async (req, res) => {
   try {
-    const { name, phone, email, business, businessType, service, message } = req.body;
+    const { name, phone, email, business, businessType, service, message } =
+      req.body;
 
     if (!name || !phone || !email || !business || !businessType || !service) {
       return res.status(400).json({
@@ -85,7 +86,7 @@ app.post("/api/book-demo", async (req, res) => {
       `Service: ${service}\n` +
       `Message: ${message || "No message"}`;
 
-    await sendEmails({
+    sendEmails({
       name,
       phone,
       email,
@@ -98,7 +99,9 @@ app.post("/api/book-demo", async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Thank you! Your demo request submitted successfully.",
-      whatsapp: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(whatsappText)}`,
+      whatsapp: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
+        whatsappText
+      )}`,
     });
   } catch (error) {
     console.error("❌ Server Error:", error.message);
@@ -122,6 +125,9 @@ async function sendEmails(data) {
       port: 587,
       secure: false,
       family: 4,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
