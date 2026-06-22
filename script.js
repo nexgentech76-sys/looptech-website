@@ -1,39 +1,34 @@
 /* =========================
+   LOOPTECH WEBSITE SCRIPT
+========================= */
+
+/* =========================
    BOOK DEMO FORM SUBMIT
 ========================= */
 
 const demoForm = document.getElementById("demoForm");
+const submitBtn = document.querySelector(".submit-btn");
 
-if (demoForm) {
+if (demoForm && submitBtn) {
   demoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const submitBtn = document.querySelector(".submit-btn");
-
     const formData = {
-      name: document.getElementById("name")?.value.trim() || "",
-      phone: document.getElementById("phone")?.value.trim() || "",
-      email: document.getElementById("email")?.value.trim() || "",
-      business: document.getElementById("business")?.value.trim() || "",
-      businessType: document.getElementById("businessType")?.value || "",
-      service: document.getElementById("service")?.value || "",
-      message: document.getElementById("message")?.value.trim() || "",
+      name: getValue("name"),
+      phone: getValue("phone"),
+      email: getValue("email"),
+      business: getValue("business"),
+      businessType: getValue("businessType"),
+      service: getValue("service"),
+      message: getValue("message"),
     };
 
-    if (
-      !formData.name ||
-      !formData.phone ||
-      !formData.email ||
-      !formData.business ||
-      !formData.businessType ||
-      !formData.service
-    ) {
+    if (!isValidForm(formData)) {
       alert("Please fill all required fields");
       return;
     }
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = "Submitting...";
+    setButtonLoading(true);
 
     try {
       const response = await fetch("/api/book-demo", {
@@ -47,8 +42,7 @@ if (demoForm) {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(result.message || "Submission failed");
-        return;
+        throw new Error(result.message || "Submission failed");
       }
 
       if (result.whatsapp) {
@@ -57,17 +51,37 @@ if (demoForm) {
 
       demoForm.reset();
 
-      setTimeout(() => {
-        window.location.href = "/thank-you";
-      }, 1000);
+      window.location.href = "/thank-you";
     } catch (error) {
       console.error("Submit Error:", error);
-      alert("Server error. Please check Node.js terminal.");
+      alert("Server error. Please try again or contact us on WhatsApp.");
     } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Submit Request';
+      setButtonLoading(false);
     }
   });
+}
+
+function getValue(id) {
+  const element = document.getElementById(id);
+  return element ? element.value.trim() : "";
+}
+
+function isValidForm(data) {
+  return (
+    data.name &&
+    data.phone &&
+    data.email &&
+    data.business &&
+    data.businessType &&
+    data.service
+  );
+}
+
+function setButtonLoading(isLoading) {
+  submitBtn.disabled = isLoading;
+  submitBtn.innerHTML = isLoading
+    ? "Submitting..."
+    : '<i class="fab fa-whatsapp"></i> Submit Request';
 }
 
 /* =========================
@@ -78,30 +92,31 @@ const counters = document.querySelectorAll(".count");
 
 if (counters.length > 0) {
   counters.forEach((counter) => {
-    const target = Number(counter.getAttribute("data-target"));
-    let count = 0;
-
-    const updateCounter = () => {
-      const increment = Math.ceil(target / 100);
-
-      count += increment;
-
-      if (count < target) {
-        counter.innerText = count;
-        setTimeout(updateCounter, 20);
-      } else {
-        if (target === 500) {
-          counter.innerText = "500+";
-        } else if (target === 6) {
-          counter.innerText = "6+";
-        } else if (target === 99) {
-          counter.innerText = "99%";
-        } else {
-          counter.innerText = target;
-        }
-      }
-    };
-
-    updateCounter();
+    animateCounter(counter);
   });
+}
+
+function animateCounter(counter) {
+  const target = Number(counter.dataset.target || 0);
+  let current = 0;
+  const increment = Math.ceil(target / 100);
+
+  const timer = setInterval(() => {
+    current += increment;
+
+    if (current >= target) {
+      counter.innerText = formatCounter(target);
+      clearInterval(timer);
+      return;
+    }
+
+    counter.innerText = current;
+  }, 20);
+}
+
+function formatCounter(value) {
+  if (value === 500) return "500+";
+  if (value === 6) return "6+";
+  if (value === 99) return "99%";
+  return value;
 }

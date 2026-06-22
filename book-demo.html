@@ -414,12 +414,12 @@ form.addEventListener("submit", async function(e){
     form.reset();
 
     setTimeout(function(){
-      window.location.href = "/thank-you";
+      window.location.href = "/thank-you.html";
     }, 1200);
 
   } catch(error) {
     console.error("Submit Error:", error);
-    alert("Server Error. Check Node.js terminal.");
+    alert("Server Error. Please try WhatsApp.");
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fab fa-whatsapp"></i> Submit Request';
