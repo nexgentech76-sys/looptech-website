@@ -14,20 +14,33 @@ const PORT = process.env.PORT || 5000;
 const ADMIN_WHATSAPP = "971567275589";
 const ROOT_DIR = path.join(__dirname, "..");
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5000",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://jcjlooptech.com",
+    "https://www.jcjlooptech.com",
+    "https://looptech-website-beryl.vercel.app",
+    "https://looptech-website.onrender.com"
+  ],
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(ROOT_DIR));
 
 const demoSchema = new mongoose.Schema(
   {
-    name: String,
-    phone: String,
-    email: String,
-    business: String,
-    businessType: String,
-    service: String,
-    message: String,
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
+    email: { type: String, required: true },
+    business: { type: String, required: true },
+    businessType: { type: String, required: true },
+    service: { type: String, required: true },
+    message: { type: String, default: "" }
   },
   { timestamps: true }
 );
@@ -47,34 +60,46 @@ app.get("/book-demo.html", (req, res) => {
 });
 
 app.get("/thank-you", (req, res) => {
-  res.redirect("/thank-you.html");
+  res.sendFile(path.join(ROOT_DIR, "thank-you.html"));
 });
 
-app.get("/thank-you.html", (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, "backend", "thank-you.html"));
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "LoopTech backend is running"
+  });
 });
 
 app.post("/api/book-demo", async (req, res) => {
   try {
-    const { name, phone, email, business, businessType, service, message } =
-      req.body;
-
-    if (!name || !phone || !email || !business || !businessType || !service) {
-      return res.status(400).json({
-        success: false,
-        message: "Please fill all required fields",
-      });
-    }
-
-    await Demo.create({
+    const {
       name,
       phone,
       email,
       business,
       businessType,
       service,
-      message,
+      message
+    } = req.body;
+
+    if (!name || !phone || !email || !business || !businessType || !service) {
+      return res.status(400).json({
+        success: false,
+        message: "Please fill all required fields"
+      });
+    }
+
+    const demoRequest = await Demo.create({
+      name,
+      phone,
+      email,
+      business,
+      businessType,
+      service,
+      message: message || ""
     });
+
+    await sendEmails(demoRequest);
 
     const whatsappText =
       `NEW DEMO REQUEST\n\n` +
@@ -86,36 +111,24 @@ app.post("/api/book-demo", async (req, res) => {
       `Service: ${service}\n` +
       `Message: ${message || "No message"}`;
 
-    sendEmails({
-      name,
-      phone,
-      email,
-      business,
-      businessType,
-      service,
-      message,
-    });
-
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "Thank you! Your demo request submitted successfully.",
-      whatsapp: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
-        whatsappText
-      )}`,
+      whatsapp: `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(whatsappText)}`
     });
   } catch (error) {
-    console.error("❌ Server Error:", error.message);
+    console.error("Server Error:", error.message);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: "Server error. Please try again later.",
+      message: "Server error. Please try again later."
     });
   }
 });
 
 async function sendEmails(data) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log("⚠️ Email skipped: EMAIL_USER or EMAIL_PASS missing");
+    console.log("Email skipped: EMAIL_USER or EMAIL_PASS missing");
     return;
   }
 
@@ -125,16 +138,10 @@ async function sendEmails(data) {
       port: 587,
       secure: false,
       family: 4,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
+        pass: process.env.EMAIL_PASS
+      }
     });
 
     await transporter.sendMail({
@@ -150,7 +157,7 @@ async function sendEmails(data) {
         <p><b>Industry:</b> ${data.businessType}</p>
         <p><b>Service:</b> ${data.service}</p>
         <p><b>Message:</b> ${data.message || "No message"}</p>
-      `,
+      `
     });
 
     await transporter.sendMail({
@@ -158,27 +165,31 @@ async function sendEmails(data) {
       to: data.email,
       subject: "Thank You For Contacting LoopTech",
       html: `
-        <div style="font-family:Segoe UI,sans-serif;padding:20px">
-          <h2 style="color:#25d366">Thank You, ${data.name}!</h2>
+        <div style="font-family:Segoe UI,sans-serif;padding:20px;color:#222">
+          <h2 style="color:#081c3a">Thank You, ${data.name}!</h2>
           <p>Your demo request has been submitted successfully.</p>
           <p>Our LoopTech team will contact you shortly.</p>
+
           <hr>
-          <p><b>Your Request Details</b></p>
+
+          <h3>Your Request Details</h3>
           <p><b>Business:</b> ${data.business}</p>
           <p><b>Industry:</b> ${data.businessType}</p>
           <p><b>Service:</b> ${data.service}</p>
+
           <br>
+
           <p><b>LoopTech Software Solutions</b></p>
-          <p>📞 +971 56 727 5589</p>
-          <p>📧 jcjlooptech@gmail.com</p>
-          <p>📍 Abu Dhabi, UAE</p>
+          <p>Phone: +971 56 727 5589</p>
+          <p>Email: jcjlooptech@gmail.com</p>
+          <p>Location: Abu Dhabi, UAE</p>
         </div>
-      `,
+      `
     });
 
-    console.log("✅ Emails sent successfully");
+    console.log("Emails sent successfully");
   } catch (error) {
-    console.log("❌ Email Error:", error.message);
+    console.log("Email Error:", error.message);
   }
 }
 
@@ -190,13 +201,13 @@ async function startServer() {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    console.log("✅ MongoDB Connected");
+    console.log("MongoDB Connected");
 
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Startup Error:", error.message);
+    console.error("Startup Error:", error.message);
     process.exit(1);
   }
 }
