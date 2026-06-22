@@ -407,15 +407,15 @@ form.addEventListener("submit", async function(e){
       formData.name +
       "</b>! Your demo request has been received successfully.";
 
-    if (result.whatsapp) {
-      window.open(result.whatsapp, "_blank");
-    }
-
     form.reset();
 
     setTimeout(function(){
-      window.location.href = "/thank-you.html";
-    }, 1200);
+      if (result.whatsapp) {
+        window.location.href = result.whatsapp;
+      } else {
+        window.location.href = "/thank-you.html";
+      }
+    }, 800);
 
   } catch(error) {
     console.error("Submit Error:", error);
