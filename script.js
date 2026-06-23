@@ -4,9 +4,23 @@ const demoForm = document.getElementById("demoForm");
 const submitBtn = document.getElementById("submitBtn");
 const successBox = document.getElementById("successBox");
 
+function getValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : "";
+}
+
+function setLoading(status) {
+  if (!submitBtn) return;
+
+  submitBtn.disabled = status;
+  submitBtn.innerHTML = status
+    ? "Submitting..."
+    : '<i class="fab fa-whatsapp"></i> Submit Request';
+}
+
 if (demoForm) {
-  demoForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
+  demoForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
     const formData = {
       name: getValue("name"),
@@ -18,7 +32,14 @@ if (demoForm) {
       message: getValue("message")
     };
 
-    if (!formData.name || !formData.phone || !formData.email || !formData.business || !formData.businessType || !formData.service) {
+    if (
+      !formData.name ||
+      !formData.phone ||
+      !formData.email ||
+      !formData.business ||
+      !formData.businessType ||
+      !formData.service
+    ) {
       alert("Please fill all required fields");
       return;
     }
@@ -28,9 +49,7 @@ if (demoForm) {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
 
@@ -42,16 +61,21 @@ if (demoForm) {
         return;
       }
 
-      showSuccess(formData.name);
+      if (successBox) {
+        successBox.style.display = "block";
+        successBox.innerHTML = `✅ Thank you <b>${formData.name}</b>! Your demo request has been received successfully.`;
+      }
+
       demoForm.reset();
 
       if (result.whatsapp) {
         window.open(result.whatsapp, "_blank");
       }
 
-      setTimeout(function () {
+      setTimeout(() => {
         window.location.href = "thank-you.html";
       }, 1200);
+
     } catch (error) {
       console.error("Submit Error:", error);
       alert("Server error. Please try WhatsApp.");
@@ -60,54 +84,24 @@ if (demoForm) {
   });
 }
 
-function getValue(id) {
-  const element = document.getElementById(id);
-  return element ? element.value.trim() : "";
-}
-
-function setLoading(isLoading) {
-  if (!submitBtn) return;
-
-  submitBtn.disabled = isLoading;
-  submitBtn.innerHTML = isLoading
-    ? "Submitting..."
-    : '<i class="fab fa-whatsapp"></i> Submit Request';
-}
-
-function showSuccess(name) {
-  if (!successBox) return;
-
-  successBox.style.display = "block";
-  successBox.innerHTML = `✅ Thank you <b>${name}</b>! Your demo request has been received successfully.`;
-}
-
-const counters = document.querySelectorAll(".count");
-
-if (counters.length > 0) {
-  counters.forEach(animateCounter);
-}
-
-function animateCounter(counter) {
-  const target = Number(counter.getAttribute("data-target") || 0);
+/* Counter Animation */
+document.querySelectorAll(".count").forEach((counter) => {
+  const target = Number(counter.dataset.target || 0);
   let current = 0;
-  const increment = Math.max(1, Math.ceil(target / 100));
+  const step = Math.max(1, Math.ceil(target / 100));
 
-  const timer = setInterval(function () {
-    current += increment;
+  const timer = setInterval(() => {
+    current += step;
 
     if (current >= target) {
-      counter.innerText = formatCounter(target);
+      counter.innerText =
+        target === 500 ? "500+" :
+        target === 6 ? "6+" :
+        target === 99 ? "99%" :
+        target;
       clearInterval(timer);
-      return;
+    } else {
+      counter.innerText = current;
     }
-
-    counter.innerText = current;
   }, 20);
-}
-
-function formatCounter(value) {
-  if (value === 500) return "500+";
-  if (value === 6) return "6+";
-  if (value === 99) return "99%";
-  return value;
-}
+});
